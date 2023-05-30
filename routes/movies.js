@@ -85,6 +85,49 @@ router.get('/search', function (req, res, next) {
 }
 )
 
+router.get("/data/:imdbID", function (req, res, next) {
+    const imdbID = req.params.imdbID
+
+    req.db
+        .from("basics")
+        .leftJoin("principals", "basics.tconst", "principals.tconst")
+        .where("basics.tconst", "=", imdbID)
+        .then((movies) => {
+            if (movies.length === 0) {
+                // Movie not found
+                res.status(404).json({ error: true, message: "The requested movie could not be found" });
+            }
+            else {
+                res.json({
+                    title: movies[0].primaryTitle,
+                    year: movies[0].year,
+                    runtime: movies[0].runtimeMinutes,
+                    genres: movies[0].genres.split(","),
+                    country: movies[0].country,
+                    principals: movies.map((movie) => ({
+                        id: movie.nconst,
+                        category: movie.category,
+                        name: movie.name,
+                        characters: movie.characters !== "" ? [movie.characters.replace(/[\[\]"]/g, "")] : []
+                    })),
+                    rating: [{
+                        source: "Internet Movie Database",
+                        value: parseFloat(movies[0].imdbRating)
+                    }],
+                    boxoffice: movies[0].boxoffice,
+                    poster: movies[0].poster,
+                    plot: movies[0].plot
+
+                });
+            }
+        })
+        .catch((error) => {
+            console.error(error);
+            res.status(400).json({ error: true, message: "Invalid query parameters", details: err.message });
+        });
+
+})
+
 
 
 
