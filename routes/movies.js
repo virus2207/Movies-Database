@@ -26,13 +26,15 @@ router.get('/search', function (req, res, next) {
 
     // Add title and year conditions if provided
     if (title && year) {
+        if (!/^\d{4}$/.test(year)) {
+            return res.status(400).json({ erro: true, message: "Invalid year format. Format must be yyyy." })
+        }
         query = query.where('primaryTitle', 'like', `%${title}%`).andWhere('year', "=", year);
     } else if (title) {
         query = query.where('primaryTitle', 'like', `%${title}%`);
     } else if (year) {
         if (!/^\d{4}$/.test(year)) {
-            return res.status(400).json({ erro: true, message: "Invalid year format. Format must be yyyy." });
-
+            return res.status(400).json({ erro: true, message: "Invalid year format. Format must be yyyy." })
         }
 
         query = query.where('year', '=', year);
