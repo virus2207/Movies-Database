@@ -95,6 +95,7 @@ router.get("/data/:imdbID", function (req, res, next) {
     req.db
         .from("basics")
         .leftJoin("principals", "basics.tconst", "principals.tconst")
+        .leftJoin("ratings", "basics.tconst", "ratings.tconst") // Joining the ratings table
         .where("basics.tconst", "=", imdbID)
         .then((movies) => {
             //check if the database contatins the serach movies 
@@ -103,6 +104,7 @@ router.get("/data/:imdbID", function (req, res, next) {
                 res.status(404).json({ error: true, message: "The requested movie could not be found" });
             }
             else {
+
                 res.json({
                     title: movies[0].primaryTitle, // only chose the first data from the respond as there are duplicate data because of lefjoin 
                     year: movies[0].year,
@@ -115,10 +117,10 @@ router.get("/data/:imdbID", function (req, res, next) {
                         name: movie.name,
                         characters: movie.characters !== "" ? [movie.characters.replace(/[\[\]"]/g, "")] : [] // strip off [] and ""
                     })),
-                    rating: [{
-                        source: "Internet Movie Database",
-                        value: parseFloat(movies[0].imdbRating) //convert the result to float 
-                    }],
+                    rating: movies.slice(0, 3).map((movie) => ({
+                        source: movie.source,
+                        value: parseFloat(movie.value)
+                    })),
                     boxoffice: movies[0].boxoffice,
                     poster: movies[0].poster,
                     plot: movies[0].plot
