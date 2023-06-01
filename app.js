@@ -6,7 +6,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-var indexRouter = require('./routes/index');
+
 var moviesRouter = require('./routes/movies');
 var usersRouter = require('./routes/user');
 var peopleRouter = require('./routes/people')
@@ -16,11 +16,9 @@ var app = express();
 
 
 const options = require('./knexfile.js');
-//used for prac 9 to allow Cross-Orgin Resource Sharing (middle ware)
 const knex = require('knex')(options);
 const cors = require('cors'); // cors enabled web server listening 
 const exp = require('constants');
-
 const swaggerUI = require('swagger-ui-express');
 const swaggerDocument = require('./docs/swagger.json')//<----------
 
@@ -63,12 +61,8 @@ logger.token('res', (req, res) => {
   return JSON.stringify(headers);
 })
 
-//app.use('/', indexRouter);
-
-
 app.use('/user', usersRouter);
 app.use('/movies', moviesRouter);
-
 app.use('/people', peopleRouter);
 app.use('/', swaggerUI.serve, swaggerUI.setup(swaggerDocument))
 
@@ -82,7 +76,6 @@ app.get("/knex", function (req, res, next) {
 
   res.send("Version Logged successfully");
 });
-
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

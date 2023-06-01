@@ -39,18 +39,14 @@ router.post('/register', function (req, res, next) {
     });
 });
 
-
-
 router.post('/login', function (req, res, next) {
 
   const email = req.body.email;
   const password = req.body.password;
+  const bearerExpiresIn = req.body.bearerExpiresInSeconds || 600; // Default: 10 minutes
+  const refreshExpiresIn = req.body.refreshExpiresInSeconds || 86400; // Default: 24 hours
 
-  const bearerExpiresInSeconds = parseInt(req.body.bearerExpiresInSeconds);
-  const refreshExpiresInSeconds = parseInt(req.body.refreshExpiresInSeconds);
-
-
-  //verify body
+  // Verify body
   if (!email || !password) {
     res.status(400).json({
       error: true, message: "Request body incomplete - email and password needed"
@@ -63,60 +59,41 @@ router.post('/login', function (req, res, next) {
   queryUsers
     .then(users => {
       if (users.length === 0) {
-        throw new Error("Incorrect email or password");
-      };
+        throw new Error("incorrect email or password");
+      }
 
       const user = users[0];
       return bcrypt.compare(password, user.hash);
     })
     .then(match => {
       if (!match) {
-        throw new Error("Incorrect email or password")
+        throw new Error("incorrect email or password");
       }
 
-      var bearer_expires_in = 60 * 10; // 10 minutes in seconds 
-      var refresh_expires_in = 60 * 60 * 24; //24 hours in seconds 
+      const bearerExp = Math.floor(Date.now() / 1000) + bearerExpiresIn;
+      const bearerToken = jwt.sign({ exp: bearerExp }, process.env.JWT_SECRET);
 
-      if (bearerExpiresInSeconds && refreshExpiresInSeconds) {
-        bearer_expires_in = bearerExpiresInSeconds;
-        refresh_expires_in = refreshExpiresInSeconds;
+      const refreshExp = Math.floor(Date.now() / 1000) + refreshExpiresIn;
+      const refreshToken = jwt.sign({ exp: refreshExp }, process.env.JWT_SECRET);
 
-      }
-      else if (bearerExpiresInSeconds) {
-        bearer_expires_in = bearerExpiresInSeconds;
-      }
-
-      else if (refreshExpiresInSeconds) {
-        refresh_expires_in = refreshExpiresInSeconds;
-      }
-
-      const bearer_exp = Math.floor(Date.now() / 1000) + bearer_expires_in; //current time stamp in seconds + added time 
-      const refresh_exp = Math.floor(Date.now() / 1000) + refresh_expires_in;
-
-      const bearer_token = jwt.sign({ bearer_exp }, process.env.JWT_SECRET);
-      const refresh_token = jwt.sign({ refresh_exp }, process.env.JWT_SECRET)
       res.status(200).json({
-
-        bearerToken:
-        {
-          token: bearer_token,
+        bearerToken: {
+          token: bearerToken,
           token_type: "Bearer",
-          expires_in: bearer_expires_in,
+          expires_in: bearerExpiresIn
         },
-        refreshToken:
-        {
-          token: refresh_token,
+        refreshToken: {
+          token: refreshToken,
           token_type: "Refresh",
-          expires_in: refresh_expires_in
+          expires_in: refreshExpiresIn
         }
-      }
-
-      );
+      });
 
     })
     .catch(e => {
-      res.status(401).json({ error: true, message: e.message })
-    })
+      res.status(401).json({ error: true, message: "Failed to login: " + e.message })
+    });
 });
+
 
 module.exports = router;
