@@ -8,7 +8,8 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var moviesRouter = require('./routes/movies');
-var usersRouter = require('./routes/users');
+var usersRouter = require('./routes/user');
+var peopleRouter = require('./routes/people')
 require("dotenv").config();
 
 var app = express();
@@ -62,10 +63,15 @@ logger.token('res', (req, res) => {
   return JSON.stringify(headers);
 })
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-app.use('/docs', swaggerUI.serve, swaggerUI.setup(swaggerDocument))
+//app.use('/', indexRouter);
+
+
+app.use('/user', usersRouter);
 app.use('/movies', moviesRouter);
+
+app.use('/people', peopleRouter);
+app.use('/', swaggerUI.serve, swaggerUI.setup(swaggerDocument))
+
 app.get("/knex", function (req, res, next) {
   req.db.raw("SELECT VERSION()")
     .then((version) => console.log(version[0][0]))
@@ -92,6 +98,9 @@ app.use(function (err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.render('error');
+
+
+
 });
 
 

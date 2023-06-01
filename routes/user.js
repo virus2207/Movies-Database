@@ -46,6 +46,10 @@ router.post('/login', function (req, res, next) {
   const email = req.body.email;
   const password = req.body.password;
 
+  const bearerExpiresInSeconds = parseInt(req.body.bearerExpiresInSeconds);
+  const refreshExpiresInSeconds = parseInt(req.body.refreshExpiresInSeconds);
+
+
   //verify body
   if (!email || !password) {
     res.status(400).json({
@@ -59,7 +63,7 @@ router.post('/login', function (req, res, next) {
   queryUsers
     .then(users => {
       if (users.length === 0) {
-        throw new Error("User does not exist");
+        throw new Error("Incorrect email or password");
       };
 
       const user = users[0];
@@ -67,21 +71,51 @@ router.post('/login', function (req, res, next) {
     })
     .then(match => {
       if (!match) {
-        throw new Error("Passwords does not match")
+        throw new Error("Incorrect email or password")
       }
 
-      const expires_in = 60 * 60 * 24;
-      const exp = Math.floor(Date.now() / 1000) + expires_in;
-      const token = jwt.sign({ exp }, process.env.JWT_SECRET);
+      var bearer_expires_in = 60 * 10; // 10 minutes in seconds 
+      var refresh_expires_in = 60 * 60 * 24; //24 hours in seconds 
+
+      if (bearerExpiresInSeconds && refreshExpiresInSeconds) {
+        bearer_expires_in = bearerExpiresInSeconds;
+        refresh_expires_in = refreshExpiresInSeconds;
+
+      }
+      else if (bearerExpiresInSeconds) {
+        bearer_expires_in = bearerExpiresInSeconds;
+      }
+
+      else if (refreshExpiresInSeconds) {
+        refresh_expires_in = refreshExpiresInSeconds;
+      }
+
+      const bearer_exp = Math.floor(Date.now() / 1000) + bearer_expires_in; //current time stamp in seconds + added time 
+      const refresh_exp = Math.floor(Date.now() / 1000) + refresh_expires_in;
+
+      const bearer_token = jwt.sign({ bearer_exp }, process.env.JWT_SECRET);
+      const refresh_token = jwt.sign({ refresh_exp }, process.env.JWT_SECRET)
       res.status(200).json({
-        token,
-        token_type: "Bearer",
-        expires_in
-      });
+
+        bearerToken:
+        {
+          token: bearer_token,
+          token_type: "Bearer",
+          expires_in: bearer_expires_in,
+        },
+        refreshToken:
+        {
+          token: refresh_token,
+          token_type: "Refresh",
+          expires_in: refresh_expires_in
+        }
+      }
+
+      );
 
     })
     .catch(e => {
-      res.status(500).json({ error: true, message: "fial to login " + e.message })
+      res.status(401).json({ error: true, message: e.message })
     })
 });
 

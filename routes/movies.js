@@ -29,7 +29,7 @@ router.get('/search', function (req, res, next) {
         if (!/^\d{4}$/.test(year)) {
             return res.status(400).json({ erro: true, message: "Invalid year format. Format must be yyyy." })
         }
-        query = query.where('primaryTitle', 'like', `%${title}%`).andWhere('year', "=", year);
+        query = query.where('primaryTitle', 'like', `%${title}`).andWhere('year', "=", year);
     } else if (title) {
         query = query.where('primaryTitle', 'like', `%${title}%`);
     } else if (year) {
@@ -44,8 +44,8 @@ router.get('/search', function (req, res, next) {
     if (!title && !year) {
         query = query.whereRaw('1 = 1');
     }
-    // Add pagination
-    //query = query.limit(perPage).offset(from);
+
+
 
     // Execute the query
     query.then(movies => {
@@ -60,6 +60,8 @@ router.get('/search', function (req, res, next) {
                 metacriticRating: movie.metacriticRating,
                 classification: movie.rated
             }))
+
+            // use totalMovies for pagination purpose 
             const totalMovies = movies.length;
 
             // Send the response
@@ -88,18 +90,21 @@ router.get('/search', function (req, res, next) {
 router.get("/data/:imdbID", function (req, res, next) {
     const imdbID = req.params.imdbID
 
+    //join basics and  pricipals table by tconst 
+
     req.db
         .from("basics")
         .leftJoin("principals", "basics.tconst", "principals.tconst")
         .where("basics.tconst", "=", imdbID)
         .then((movies) => {
+            //check if the database contatins the serach movies 
             if (movies.length === 0) {
                 // Movie not found
                 res.status(404).json({ error: true, message: "The requested movie could not be found" });
             }
             else {
                 res.json({
-                    title: movies[0].primaryTitle,
+                    title: movies[0].primaryTitle, // only chose the first data from the respond as there are duplicate data because of lefjoin 
                     year: movies[0].year,
                     runtime: movies[0].runtimeMinutes,
                     genres: movies[0].genres.split(","),
@@ -108,11 +113,11 @@ router.get("/data/:imdbID", function (req, res, next) {
                         id: movie.nconst,
                         category: movie.category,
                         name: movie.name,
-                        characters: movie.characters !== "" ? [movie.characters.replace(/[\[\]"]/g, "")] : []
+                        characters: movie.characters !== "" ? [movie.characters.replace(/[\[\]"]/g, "")] : [] // strip off [] and ""
                     })),
                     rating: [{
                         source: "Internet Movie Database",
-                        value: parseFloat(movies[0].imdbRating)
+                        value: parseFloat(movies[0].imdbRating) //convert the result to float 
                     }],
                     boxoffice: movies[0].boxoffice,
                     poster: movies[0].poster,
@@ -132,49 +137,5 @@ router.get("/data/:imdbID", function (req, res, next) {
 
 
 
-
-router.post('/login', function (req, res, next) {
-
-    const email = req.body.email;
-    const password = req.body.password;
-
-    //verify body
-    if (!email || !password) {
-        res.status(400).json({
-            error: true, message: "Request body incomplete - email and password needed"
-        });
-        return;
-    }
-
-    const queryUsers = req.db.from("users").select("*").where("email", "=", email);
-
-    queryUsers
-        .then(users => {
-            if (users.length === 0) {
-                throw new Error("User does not exist");
-            };
-
-            const user = users[0];
-            return bcrypt.compare(password, user.hash);
-        })
-        .then(match => {
-            if (!match) {
-                throw new Error("Passwords does not match")
-            }
-
-            const expires_in = 60 * 60 * 24;
-            const exp = Math.floor(Date.now() / 1000) + expires_in;
-            const token = jwt.sign({ exp }, process.env.JWT_SECRET);
-            res.status(200).json({
-                token,
-                token_type: "Bearer",
-                expires_in
-            });
-
-        })
-        .catch(e => {
-            res.status(500).json({ error: true, message: "fial to login " + e.message })
-        })
-});
 
 module.exports = router;

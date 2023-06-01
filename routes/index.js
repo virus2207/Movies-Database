@@ -37,9 +37,33 @@ router.get("/api/city/:CountryCode", function (req, res, next) {
     });
 });
 
-/*used in prac9
-POST data to update the population parameter in the database 
-*/
+
+router.get("/people/:id"), function (req, res, next) {
+  const id = req.params.id;
+  req.db
+  slelect("*").from("names").where("nconst", "=", id)
+    .then((acotor) => {
+      if (acotor.length === 0) {
+        return res.status(404).json({ error: true, message: "No record exists of a person with this ID" })
+      }
+      else {
+        res.status(200).json({
+          name: acotor.primaryName
+
+        })
+      }
+
+
+    })
+    .catch(e => {
+      json({ error: true, message: e.message })
+    })
+
+
+
+}
+
+
 router.post("/api/update", authorization, function (req, res, next) {
   if (!req.body.name || !req.body.countrycode || !req.body.pop) {
     res.status(400).json({ message: "Error updating population!!" });
