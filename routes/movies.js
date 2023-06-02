@@ -1,8 +1,6 @@
 var express = require('express');
 var router = express.Router();
 
-
-
 /* GET users listing. */
 router.get('/', function (req, res, next) {
     res.send('respond with a resource');
@@ -17,11 +15,7 @@ router.get('/search', function (req, res, next) {
     const from = (currentPage - 1) * perPage;
     const to = from + perPage;
 
-
-
     // Add title search condition if provided
-
-
     let query = req.db.from("basics").select("*")
 
     // Add title and year conditions if provided
@@ -44,8 +38,6 @@ router.get('/search', function (req, res, next) {
     if (!title && !year) {
         query = query.whereRaw('1 = 1');
     }
-
-
 
     // Execute the query
     query.then(movies => {
@@ -134,10 +126,5 @@ router.get("/data/:imdbID", function (req, res, next) {
         });
 
 })
-
-
-
-
-
 
 module.exports = router;

@@ -1,6 +1,10 @@
 const jwt = require("jsonwebtoken");
-
 module.exports = function (req, res, next) {
+    if (!("authorization" in req.headers)) {
+        // No authorization header is found, but continue to the next middleware/route
+        return next();
+    }
+
     if (!("authorization" in req.headers)) {
         return res.status(401).json({ error: true, message: "Authorization header ('Bearer token') not found" });
 
@@ -23,4 +27,3 @@ module.exports = function (req, res, next) {
     }
     next();
 }
-

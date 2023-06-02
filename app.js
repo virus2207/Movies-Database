@@ -5,8 +5,6 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-
-
 var moviesRouter = require('./routes/movies');
 var usersRouter = require('./routes/user');
 var peopleRouter = require('./routes/people')
@@ -14,15 +12,12 @@ require("dotenv").config();
 
 var app = express();
 
-
 const options = require('./knexfile.js');
 const knex = require('knex')(options);
 const cors = require('cors'); // cors enabled web server listening 
 const exp = require('constants');
 const swaggerUI = require('swagger-ui-express');
 const swaggerDocument = require('./docs/swagger.json')//<----------
-
-
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -34,7 +29,7 @@ Concise output colored by response status for development use.
 The :status token will be colored green for success codes, red for server error codes, 
 yellow for client error codes, cyan for redirection codes, and uncolored for information codes.
 */
-app.use(logger('dev'));
+//app.use(logger('dev'));
 
 //used for prac 9 for body-prasing middleware 
 //to parse bodies
@@ -43,10 +38,6 @@ app.use(express.urlencoded({ extended: false })); // looks for URL-encoded data 
 //used for prac 9 
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
-
-
-
-
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -66,16 +57,6 @@ app.use('/movies', moviesRouter);
 app.use('/people', peopleRouter);
 app.use('/', swaggerUI.serve, swaggerUI.setup(swaggerDocument))
 
-app.get("/knex", function (req, res, next) {
-  req.db.raw("SELECT VERSION()")
-    .then((version) => console.log(version[0][0]))
-    .catch((err) => {
-      console.log(err);
-      throw err;
-    });
-
-  res.send("Version Logged successfully");
-});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -91,11 +72,6 @@ app.use(function (err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.render('error');
-
-
-
 });
-
-
 
 module.exports = app;
