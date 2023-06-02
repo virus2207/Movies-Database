@@ -79,7 +79,106 @@
           }
         }
       },
-      "UserProfile": {}
+      "UnauthorizedError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Unauthorized"
+          }
+        }
+      },
+      "UserNotFoundError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "User not found"
+          }
+        }
+      },
+      "BadRequestError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Bad Request"
+          }
+        }
+      },
+      "ForbiddenError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Forbidden"
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "mike@gmail.com"
+          },
+          "firstName": {
+            "type": "string",
+            "example": "Michael"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Jordan"
+          },
+          "dob": {
+            "type": "string",
+            "format": "date",
+            "example": "1963-02-17"
+          },
+          "address": {
+            "type": "string",
+            "example": "123 Fake Street, Springfield"
+          }
+        }
+      },
+      "UpdateUserProfile": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "example": "Michael"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Jordan"
+          },
+          "dob": {
+            "type": "string",
+            "format": "date",
+            "example": "1963-02-17"
+          },
+          "address": {
+            "type": "string",
+            "example": "123 Fake Street, Springfield"
+          }
+        }
+      }
     }
   },
   "paths": {
@@ -1071,17 +1170,17 @@
         }
       }
     },
-    "user/{email}/profile": {
+    "/user/{email}/profile": {
       "get": {
-        "description": "Get user profile",
+        "summary": "Get user profile",
         "tags": [
           "User"
         ],
         "parameters": [
           {
-            "email": "email",
+            "name": "email",
             "in": "path",
-            "description": "email of the desired user to retrieve their details",
+            "description": "User email",
             "required": true,
             "schema": {
               "type": "string",
@@ -1091,9 +1190,145 @@
         ],
         "responses": {
           "200": {
-            "description": "Successfuly retrived"
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserNotFoundError"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Update user profile",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "path",
+            "description": "User email",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The credentials of the user to log in.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "example": "Stephen"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "example": "Smith"
+                  },
+                  "dob": {
+                    "type": "string",
+                    "example": "2000-12-12"
+                  },
+                  "address": {
+                    "type": "string",
+                    "example": "65 QeeensRd, Brisbane"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserNotFoundError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   }

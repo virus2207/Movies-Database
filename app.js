@@ -29,7 +29,7 @@ Concise output colored by response status for development use.
 The :status token will be colored green for success codes, red for server error codes, 
 yellow for client error codes, cyan for redirection codes, and uncolored for information codes.
 */
-//app.use(logger('dev'));
+app.use(logger('dev'));
 
 //used for prac 9 for body-prasing middleware 
 //to parse bodies

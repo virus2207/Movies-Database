@@ -80,16 +80,13 @@ router.post('/login', function (req, res, next) {
       const refreshExp = Math.floor(Date.now() / 1000) + refreshExpiresIn;
       const refreshToken = jwt.sign({ email, exp: refreshExp }, process.env.JWT_SECRET);
 
-      const saltRounds = 10;
-      const bearer_hash = bcrypt.hashSync(bearerToken, saltRounds);
-      const refresh_hash = bcrypt.hashSync(refreshToken, saltRounds);
 
 
       return req.db.from("users")
         .where('email', "=", email)
         .update({
-          "bearerToken": bearer_hash,
-          "refreshToken": refresh_hash
+          "bearerToken": bearerToken,
+          "refreshToken": refreshToken
         })
         .then(() => {
           res.status(200).json({
@@ -113,62 +110,111 @@ router.post('/login', function (req, res, next) {
 });
 
 router.post('/refresh', function (req, res, next) {
-
   const refreshToken = req.body.refreshToken;
 
   if (!refreshToken) {
     return res.status(400).json({
       error: true,
       message: "Request body incomplete, refresh token required"
-    })
+    });
   }
 
   try {
-
     const verify_token = jwt.verify(refreshToken, process.env.JWT_SECRET);
-    email = verify_token.email;
-
+    const email = verify_token.email;
     const bearer_expires_in = 600; // 10 mins 
     const bearerExp = Math.floor(Date.now() / 1000) + bearer_expires_in;
     const bearerToken = jwt.sign({ email, exp: bearerExp }, process.env.JWT_SECRET);
-
     const refresh_expires_in = 86400;
     const refreshExp = Math.floor(Date.now() / 1000) + refresh_expires_in;
-    const refreshtoken = jwt.sign({ email, exp: refreshExp }, process.env.JWT_SECRET);
+    const newRefreshToken = jwt.sign({ email, exp: refreshExp }, process.env.JWT_SECRET);
 
-    const saltRounds = 10;
-    const bearer_hash = bcrypt.hashSync(bearerToken, saltRounds);
-    const refresh_hash = bcrypt.hashSync(refreshToken, saltRounds);
+    req.db.from("users").select("refreshToken").where("email", "=", email).first()
+      .then((user) => {
+        if (!user) {
+          throw new Error("Invalid refresh token");
+        }
 
-    req.db.from("users")
-      .where('email', "=", email)
-      .update({
-        "bearerToken": bearer_hash,
-        "refreshToken": refresh_hash
+        if (refreshToken !== user.refreshToken) {
+          throw new Error("Refresh Token invalid");
+        }
+
+        return req.db.from("users")
+          .where('email', "=", email)
+          .update({
+            "bearerToken": bearerToken,
+            "refreshToken": newRefreshToken
+          });
       })
-
-    res.status(200).json({
-      bearerToken: {
-        token: bearerToken,
-        token_type: "Bearer",
-        expires_in: bearer_expires_in
-      },
-      refreshToken: {
-        token: refreshtoken,
-        token_type: "Refresh",
-        expires_in: refresh_expires_in
-      }
-
-    })
-
+      .then(() => {
+        res.status(200).json({
+          bearerToken: {
+            token: bearerToken,
+            token_type: "Bearer",
+            expires_in: bearer_expires_in
+          },
+          refreshToken: {
+            token: newRefreshToken,
+            token_type: "Refresh",
+            expires_in: refresh_expires_in
+          }
+        });
+      })
+      .catch((err) => {
+        res.status(401).json({ error: true, message: err.message });
+      });
   }
   catch (err) {
-    res.status(401).json({ error: true, message: err.message + "JWT token has expired" })
+    res.status(401).json({ error: true, message: err.message + " JWT token has expired" });
+  }
+});
 
+router.post('/logout', function (req, res, next) {
+  const refreshToken = req.body.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(400).json({
+      error: true,
+      message: "Request body incomplete, refresh token required"
+    });
   }
 
+  try {
+    const verify_token = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const email = verify_token.email;
 
-})
+    req.db.from("users").select("refreshToken").where("email", "=", email).first()
+      .then((user) => {
+        if (!user) {
+          throw new Error("invalid refresh token");
+        }
+
+        if (refreshToken !== user.refreshToken) {
+          throw new Error("JWT token has expired");
+        }
+
+        return req.db.from("users")
+          .where('email', "=", email)
+          .update({
+            bearerToken: null,
+            refreshToken: null
+          }
+
+          );
+      })
+      .then(() => {
+        res.status(200).json({ error: false, message: "Token successfully invalidated" })
+
+      })
+      .catch((err) => {
+        res.status(401).json({ error: true, message: err.message });
+      });
+  }
+  catch (err) {
+    res.status(401).json({ error: true, message: err.message + " JWT token has expired" });
+  }
+});
+
 
 router.get('/:email/profile', getProfileAuthorization, function (req, res, next) {
   const email = req.params.email;
@@ -201,7 +247,7 @@ router.get('/:email/profile', getProfileAuthorization, function (req, res, next)
           throw new Error(e.message)
         }
         if (authorized) {
-          const dob = user.dob.toISOString().split('T')[0]; // Extract year, month, and date (YYYY-MM-DD)
+          const dob = user.dob ? user.dob.toISOString().split('T')[0] : null; // Extract year, month, and date (YYYY-MM-DD)
           userProfile.dob = dob
           userProfile.address = user.address
         }
@@ -276,7 +322,6 @@ router.put('/:email/profile', authorization, function (req, res, next) {
     .catch(e => {
       res.status(500).json({ error: true, message: "Failed to update user profile" + e });
     })
-
 })
 
 module.exports = router;

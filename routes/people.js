@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-const authorization = require('../Middleware/authorization');
+const authorization = require('../Middleware/Authorization');
 
 router.get("/:id", authorization, function (req, res, next) {
     const id = req.params.id;
