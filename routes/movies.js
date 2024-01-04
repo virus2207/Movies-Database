@@ -11,7 +11,7 @@ router.get('/search', function (req, res, next) {
     //Extract query parameters
     const { title, year, page } = req.query;
     const perPage = 100;
-    const currentPage = parseInt(page) || 1;
+    const currentPage = page ? parseInt(page) : 1;
     const from = (currentPage - 1) * perPage;
     const to = from + perPage;
 
@@ -47,9 +47,9 @@ router.get('/search', function (req, res, next) {
                 title: movie.primaryTitle,
                 year: movie.year,
                 imdbID: movie.tconst,
-                imdbRating: movie.imdbRating,
-                rottenTomatoesRating: movie.rottentomatoesRating,
-                metacriticRating: movie.metacriticRating,
+                imdbRating: parseFloat(movie.imdbRating),
+                rottenTomatoesRating: parseFloat(movie.rottentomatoesRating),
+                metacriticRating: parseFloat(movie.metacriticRating),
                 classification: movie.rated
             }))
 
@@ -66,7 +66,7 @@ router.get('/search', function (req, res, next) {
                     currentPage: currentPage,
                     from: from,
                     to: to > totalMovies ? totalMovies : to,
-                    previousPage: currentPage > 1 ? currentPage - 1 : null,
+                    previousPage: currentPage > (Math.ceil(totalMovies / perPage)) ? currentPage - 1 : null,
                     nextPage: currentPage < (Math.ceil(totalMovies / perPage)) ? currentPage + 1 : null
                 }
 
@@ -82,6 +82,16 @@ router.get('/search', function (req, res, next) {
 router.get("/data/:imdbID", function (req, res, next) {
     const imdbID = req.params.imdbID
 
+    // check if imdbID is in 4 digits 
+    const yearRegex = /^\d{4}$/;
+
+    if (yearRegex.test(imdbID)) {
+        return res.status(400).json({
+            error: true,
+            message: "Invalid query parameters: year.Query parameters are not permitted"
+        });
+    }
+
     //join basics and  pricipals table by tconst 
 
     req.db
@@ -96,9 +106,22 @@ router.get("/data/:imdbID", function (req, res, next) {
                 res.status(404).json({ error: true, message: "The requested movie could not be found" });
             }
             else {
+                const ratings = [];
+                const seenSources = new Set();
+
+                movies.forEach((movie) => {
+                    const { source, value } = movie;
+                    if (!seenSources.has(source)) {
+                        ratings.push({
+                            source,
+                            value: parseFloat(value)
+                        });
+                        seenSources.add(source);
+                    }
+                });
 
                 res.json({
-                    title: movies[0].primaryTitle, // only chose the first data from the respond as there are duplicate data because of lefjoin 
+                    title: movies[0].originalTitle, // only chose the first data from the respond as there are duplicate data because of lefjoin 
                     year: movies[0].year,
                     runtime: movies[0].runtimeMinutes,
                     genres: movies[0].genres.split(","),
@@ -109,10 +132,7 @@ router.get("/data/:imdbID", function (req, res, next) {
                         name: movie.name,
                         characters: movie.characters !== "" ? [movie.characters.replace(/[\[\]"]/g, "")] : [] // strip off [] and ""
                     })),
-                    rating: movies.slice(0, 3).map((movie) => ({
-                        source: movie.source,
-                        value: parseFloat(movie.value)
-                    })),
+                    rating: ratings,
                     boxoffice: movies[0].boxoffice,
                     poster: movies[0].poster,
                     plot: movies[0].plot
@@ -121,7 +141,7 @@ router.get("/data/:imdbID", function (req, res, next) {
             }
         })
         .catch((error) => {
-            console.error(error);
+
             res.status(400).json({ error: true, message: "Invalid query parameters", details: err.message });
         });
 

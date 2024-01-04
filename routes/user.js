@@ -3,7 +3,7 @@ var router = express.Router();
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET;
 const bcrypt = require("bcrypt");
-const authorization = require('../Middleware/Authorization');
+const authorization = require('../Middleware/authorization')
 
 const getProfileAuthorization = require('../Middleware/profileAuthorization');
 
@@ -165,7 +165,7 @@ router.post('/refresh', function (req, res, next) {
       });
   }
   catch (err) {
-    res.status(401).json({ error: true, message: err.message + " JWT token has expired" });
+    res.status(401).json({ error: true, message: "Invalid JWT token" });
   }
 });
 
@@ -211,7 +211,7 @@ router.post('/logout', function (req, res, next) {
       });
   }
   catch (err) {
-    res.status(401).json({ error: true, message: err.message + " JWT token has expired" });
+    res.status(401).json({ error: true, message: " Invalid JWT token" });
   }
 });
 
