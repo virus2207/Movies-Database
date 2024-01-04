@@ -6,6 +6,16 @@ This repository hosts a simple backend server designed to manage a movie databas
 
 To get started, import the provided SQL dump file into your SQL Workbench and execute it as a regular script.
 
+## Movies Routes
+
+### GET /movies/serach
+
+This route retrieves a serach movie information in JSON format.
+
+
+### GET/movies/{imbid}
+
+This route retrieves a more detailed information of the movie by providing the imbid.
 ## User Profile Routes
 
 ### GET /user/{email}/profile
