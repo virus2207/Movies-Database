@@ -13,7 +13,7 @@ To get started, import the provided SQL dump file into your SQL Workbench and ex
 This route retrieves a user's profile information in JSON format. The response varies based on the authorization status.
 
 - **Authorized Request (with valid JWT bearer token):**
-  ```json
+  ```
   200 OK
   {
     "email": "mike@gmail.com",
@@ -24,7 +24,7 @@ This route retrieves a user's profile information in JSON format. The response v
   }
   ```
 - **Unauthorized Request (without 'Authorized:' header):**
-```json
+```
 
 200 OK
 {
@@ -37,7 +37,7 @@ For unauthorized requests, the server may return different responses (401 Unauth
 
 - **JWT Token Expired:**
 ```
-json
+
 401 Unauthorized
 {
   "error": true,
@@ -56,17 +56,15 @@ json
 ```
 - **Malformed Authorization Header:**
 ```
-json
-
 401 Unauthorized
 {
   "error": true,
   "message": "Authorization header is malformed"
 }
 ```
+
 - **Non-existent User:**
 ```
-json
 404 Not Found
 {
   "error": true,
@@ -81,8 +79,6 @@ This route is used to update a user's profile information. Only the user associa
 
 - **Request Body (application/json)**
 ```
-json
-
 {
   "firstName": "Michael",
   "lastName": "Jordan",
@@ -90,11 +86,11 @@ json
   "address": "123 Fake Street, Springfield"
 }
 ```
+
 - **Successful Update Response**
-- 
+  
 If the profile update is successful, the server responds with the updated profile:
 ```
-json
 200 OK
 {
   "email": "mike@gmail.com",
@@ -104,23 +100,22 @@ json
   "address": "123 Fake Street, Springfield"
 }
 ```
+
 - **Error Responses**
-- 
-The server may return different responses based on various scenarios:
+
+*The server may return different responses based on various scenarios:*
 
 - **Forbidden (Wrong Email):**
 ```
-json
-Copy code
 403 Forbidden
 {
   "error": true,
   "message": "Forbidden"
 }
 ```
+
 - **No Authorization Header:**
 
-json
 ```
 401 Unauthorized
 {
@@ -129,9 +124,7 @@ json
 }
 ```
 
-JWT Token Issues (Expired, Invalid, Malformed):
-
-json
+- **JWT Token Issues (Expired, Invalid, Malformed):**
 ```
 401 Unauthorized
 {
@@ -139,9 +132,8 @@ json
   "message": "JWT token has expired"
 }
 ```
-Non-existent User:
 
-json
+- **Non-existent User:**
 ```
 404 Not Found
 {
@@ -149,9 +141,8 @@ json
   "message": "User not found"
 }
 ```
-Incomplete Request Body:
 
-json
+- **Incomplete Request Body:**
 ```
 400 Bad Request
 {
@@ -159,9 +150,9 @@ json
   "message": "Request body incomplete: firstName, lastName, dob and address are required"
 }
 ```
-Invalid Request Body (Non-string Fields):
 
-json
+- **Invalid Request Body (Non-string Fields):**
+
 ```
 400 Bad Request
 {
@@ -169,9 +160,8 @@ json
   "message": "Request body invalid: firstName, lastName, dob and address must be strings only"
 }
 ```
-Invalid Date of Birth:
+- **Invalid Date of Birth:**
 
-json
 ```
 400 Bad Request
 {
