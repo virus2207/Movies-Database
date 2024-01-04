@@ -15,17 +15,17 @@ var http = require('http');
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
-const fs = require("fs");
-const credentials = {
-  key: fs.readFileSync("selfsigned.key", "utf-8"),
-  cert: fs.readFileSync("selfsigned.crt", "utf-8")
-}
+// const fs = require("fs");
+// const credentials = {
+//   key: fs.readFileSync("selfsigned.key", "utf-8"),
+//   cert: fs.readFileSync("selfsigned.crt", "utf-8")
+// }
 
 /**
- * Create HTTP server.
+ * Create HTTP/HTTPS server.
  */
 
-var server = https.createServer(credentials, app);
+var server = http.createServer(app);
 
 /**
  * Listen on provided port, on all network interfaces.
